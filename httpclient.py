@@ -37,7 +37,25 @@ class HTTPClient(object):
 
     def connect(self, host, port):
         # use sockets!
-        return None
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error as msg:
+            print ("Failed to create socket")
+            print ("Error Code: " + str(msg[0]) + ", Error Message: " + str(msg[1]))
+            sys.exit()
+        print ("Socket created successfully")  
+        
+        try:
+            remote_ip = socket.gethostbyname(host)
+        except socket.gaierror: # gai = get address ip
+            print("Host name could not be resolved")
+            sys.exit()
+        print ("IP address of " + host + " is " + remote_ip)
+        
+        s.connect((remote_ip, port)) # need both brackets
+        print ("Socket connected to " + host + " on IP " + remote_ip)        
+        
+        
 
     def get_code(self, data):
         return None
@@ -63,13 +81,22 @@ class HTTPClient(object):
     def GET(self, url, args=None):
         code = 500
         body = ""
+        host = url
+        port = 80
+        self.connect(host, port)        
         return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
         code = 500
         body = ""
+        host = url
+        port = 8080
+        self.connect(host, port)
         return HTTPRequest(code, body)
 
+    # gets called first
+    # tests to see if it is a POST or GET request
+    # calls .POST or .GET respectively
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
             return self.POST( url, args )
