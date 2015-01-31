@@ -70,41 +70,35 @@ class HTTPClient(object):
             print ("Error Code: " + str(msg[0]) + ", Error Message: " + str(msg[1]))
             sys.exit()
         
-    
-    
     def get_host(self, url):
-        words = string.split(self.url, "/")
+        words = string.split(url, "/")
         host = words[2]
         return host
             
     def get_path(self, url):
-        words = string.split(self.url, "/")
+        words = string.split(url, "/")
         path = ""
         for x in range (3, len(words)):
             path = path + "/" + words[x]
         return path
 
-    def print_requestline(self):
-        requestline = "%s %s HTTP/1.1\r\n" % (self.method, self.get_path())
-        self.data = self.data + requestline
+    def print_requestline(self, method, url):
+        requestline = "%s %s HTTP/1.1\r\n" % (method, self.get_path(url))
+        return requestline
     
     def print_header(self, key, value):
         header = "%s: %s\r\n" % (key, value)
-        self.data = self.data + header
+        return header
     
     def end_headers(self):
-        self.data = self.data + "\r\n"
+        return "\r\n"
     
-    def print_body(self):
-        self.data = self.data + self.body
         
-    def send(self):
-        self.print_requestline()
-        self.print_header("Host", self.get_host())
-        self.end_headers()
-        self.print_body()
-        s.sendall(self.data + "\n")    
-
+    def get_body(self, method, url):
+        body = self.print_requestline(method, url) + self.print_header("Host", self.get_host(url)) + self.end_headers()
+        print body
+        return body
+    
     # read everything from the socket
     def recvall(self, sock):
         buffer = bytearray()
@@ -125,12 +119,16 @@ class HTTPClient(object):
         port = int(string.split(base, ":")[1])
         try:
             self.connect(host, port) 
-            code = 200
             print "Connected"
+            code = 200
         except:
-            code = 500
+            code = 404
+            print "Not Found"
+            print "Did Not Connect"
+        
+        body = self.get_body("GET", host)
             
-        HTTPRequest("GET", url, code, body).send()
+        return HTTPRequest(code, body)
 
     def POST(self, url, args=None):
         code = 500
@@ -138,16 +136,18 @@ class HTTPClient(object):
         host = url
         base = string.split(url, "/")[2]
         port = int(string.split(base, ":")[1])
-        print "URL: " + url
-    
+
         try:
             self.connect(host, port) 
+            "Connected"
             code = 200
-            print "Connected"
         except:
-            code = 500
+            code = 404
+            print "Not Connected"
+        
+        body = self.get_body("POST", host)
             
-        HTTPRequest("POST", url, code, body).send()
+        return HTTPRequest(code, body)
 
     # gets called first
     # tests to see if it is a POST or GET request
