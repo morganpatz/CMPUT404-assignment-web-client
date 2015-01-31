@@ -26,13 +26,16 @@ import urllib
 from urlparse import urlparse
 import string
 from StringIO import StringIO
+import json 
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
 
 class HTTPRequest(object):
-    def __init__(self, code=200, body=""):
+    def __init__(self, requestline, headers, code=200, body=""):
         self.code = code
+        self.requestline = requestline
+        self.headers = headers
         self.body = body
     
 
@@ -82,22 +85,29 @@ class HTTPClient(object):
             path = path + "/" + words[x]
         return path
 
-    def print_requestline(self, method, url):
+    def get_requestline(self, method, url):
         requestline = "%s %s HTTP/1.1\r\n" % (method, self.get_path(url))
         return requestline
     
-    def print_header(self, key, value):
-        header = "%s: %s\r\n" % (key, value)
-        return header
+    def add_header(self, key, value):
+        self.headers[key] = value
+    
+    def get_headers(self):
+        return self.headers
     
     def end_headers(self):
         return "\r\n"
     
-        
-    def get_body(self, method, url):
-        body = self.print_requestline(method, url) + self.print_header("Host", self.get_host(url)) + self.end_headers()
-        print body
+    def get_POSTbody(self, args):
+        #params = urllib.urlencode(args)
+        body = json.dumps(args)
         return body
+    
+    def get_GETbody(self, path):
+        return path
+
+    
+
     
     # read everything from the socket
     def recvall(self, sock):
@@ -126,9 +136,13 @@ class HTTPClient(object):
             print "Not Found"
             print "Did Not Connect"
         
-        body = self.get_body("GET", host)
+        requestline = self.get_requestline("GET", host)
+        self.headers = {}
+        self.add_header("Host", self.get_host(url))
+        headers = self.get_headers()
+        body = self.get_GETbody(host)
             
-        return HTTPRequest(code, body)
+        return HTTPRequest(requestline, headers, code, body)
 
     def POST(self, url, args=None):
         code = 500
@@ -145,9 +159,17 @@ class HTTPClient(object):
             code = 404
             print "Not Connected"
         
-        body = self.get_body("POST", host)
+        requestline = self.get_requestline("POST", host)
+        self.headers = {}
+        self.add_header("Host", self.get_host(url))
+        if args:
+            self.add_header("Content-Type", "application/json; charset=utf-8")
+            self.add_header("Content-Length", len(self.get_POSTbody(args)))
+        
+        body = self.get_POSTbody(args)
+        headers = self.get_headers()
             
-        return HTTPRequest(code, body)
+        return HTTPRequest(requestline, headers, code, body)
 
     # gets called first
     # tests to see if it is a POST or GET request
