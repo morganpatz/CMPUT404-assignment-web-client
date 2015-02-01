@@ -127,15 +127,14 @@ class TestHTTPClient(unittest.TestCase):
         http = httpclass.HTTPClient()
         req = http.GET("http://%s:%d/49872398432" % (BASEHOST,BASEPORT) )
         self.assertTrue(req != None, "None Returned!")
-        self.assertTrue(req.code == 404)
-
+        self.assertTrue(req.code == 404, "Code = " + str(req.code))
     def test404POST(self):
         '''Test against 404 errors'''
         MyHTTPHandler.post = nothing_available
         http = httpclass.HTTPClient()
         req = http.POST("http://%s:%d/49872398432" % (BASEHOST,BASEPORT) )
         self.assertTrue(req != None, "None Returned!")
-        self.assertTrue(req.code == 404)
+        self.assertTrue(req.code == 404, "Code = " + str(req.code))
 
     def testGET(self):
         '''Test HTTP GET'''
@@ -161,11 +160,14 @@ class TestHTTPClient(unittest.TestCase):
             "http://slashdot.org"
             ]
         for url in urls:
-            try:
-                req = http.GET( url )
+            
+            
+            req = http.GET( url )
+            """
             except Exception as e:
                 print "An Exception was thrown for %s" % url
                 self.assertTrue( False, "An Exception was thrown for %s %s" % (url,e))
+            """
             self.assertTrue(req != None, "None Returned! %s" % url)
             self.assertTrue(req.code == 200 or 
                             req.code == 301 or
@@ -175,6 +177,7 @@ class TestHTTPClient(unittest.TestCase):
                 self.assertTrue(req.body.find("DOCTYPE")>=0 or 
                                 req.body.find("<body")>=0 , 
                                 "%s Data: [%s] " % (url,req.body))
+                            
     
     def testPOST(self):
         '''Test HTTP POST with an echo server'''
@@ -195,7 +198,6 @@ class TestHTTPClient(unittest.TestCase):
         print outargs.__class__
         print outargs
         for key in args:
-            # if you remove the [0] it works, why?
             self.assertTrue(args[key] == outargs[key][0], "Key [%s] not found" % key)
         for key in outargs:
             self.assertTrue(args[key] == outargs[key][0], "Key [%s] not found" % key)

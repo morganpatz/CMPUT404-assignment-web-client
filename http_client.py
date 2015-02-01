@@ -23,21 +23,15 @@ import socket
 import re
 # you may use urllib to encode data appropriately
 import urllib
-from urlparse import urlparse
 import string
-from StringIO import StringIO
-import json 
 
 def help():
     print "httpclient.py [GET/POST] [URL]\n"
 
 class HTTPRequest(object):
-    def __init__(self, code, body=""):
+    def __init__(self, code=200, body=""):
         self.code = code
         self.body = body
-    
-
-        
 
 class HTTPClient(object):
     #def get_host_port(self,url):
@@ -70,14 +64,20 @@ class HTTPClient(object):
             print ("Failed to connect")
             print ("Error Code: " + str(msg[0]) + ", Error Message: " + str(msg[1]))
             sys.exit()
-            
-        return s
         
+        return s
+
+    def get_code(self, data):
+        return None
+
+    def get_body(self, data):
+        return None
+    
     def get_host(self, url):
-        words = string.split(url, "/")
-        host = words[2]
-        return host
-            
+            words = string.split(url, "/")
+            host = words[2]
+            return host
+                
     def get_path(self, url):
         words = string.split(url, "/")
         path = ""
@@ -96,29 +96,11 @@ class HTTPClient(object):
         return self.headers
     
     def print_header(self, key, value):
-        return "%s: %s\r\n" % (key, value)    
+        return "%s: %s\r\n" % (key, value)
     
     def end_headers(self):
-        return "\r\n"
-    
-    def get_POSTbody(self, args):
-        body = urllib.urlencode(args)
-        #body = json.dumps(args)
-        return body
-    
-    
-    def get_code(self, data):
-        words = data.split()
-        code = words[1]
-        print "CODE: " + code
-        return int(code)
-    
-    def get_body(self, data):
-        words = data.split("\r\n\r\n")
-        body = words[1]
-        print "BODY: " + body
-        return body
-    
+        return "\r\n"    
+
     # read everything from the socket
     def recvall(self, sock):
         buffer = bytearray()
@@ -133,20 +115,17 @@ class HTTPClient(object):
 
     def GET(self, url, args=None):
         code = 500
-        body = ""
+        body = args        
         host = url
-        print "URL: " + url
         base = string.split(url, "/")[2]
-        try: 
-            port = int(string.split(base, ":")[1])
-        except:
-            port = 80
+        port = int(string.split(base, ":")[1])
+        print "HOST: " + host
+        print "PORT: " + str(port)
         try:
             sock = self.connect(host, port) 
             print "Connected"
         except:
             print "Not Connected"
-            sys.exit()
         
         requestline = self.get_requestline("GET", host)
         self.headers = {}
@@ -167,71 +146,21 @@ class HTTPClient(object):
             sys.exit()
         print("Message sent successfully")  
         
-        data = self.recvall(sock)
+        data = recvall(sock)
         print data
-        
-        code = self.get_code(data)
-        body = self.get_body(data)
             
-        return HTTPRequest(code, body)      
+        return HTTPRequest(code, body)        
+    
 
     def POST(self, url, args=None):
         code = 500
         body = ""
-        host = url
-        base = string.split(url, "/")[2]
-        port = int(string.split(base, ":")[1])
-
-        try:
-            sock = self.connect(host, port) 
-            print "Connected"
-        except:
-            print "Not Connected"
-            sys.exit()
-        
-        requestline = self.get_requestline("POST", host)
-        self.headers = {}
-        self.add_header("Host", self.get_host(url))
-        if args:
-            self.add_header("Content-Type", "application/x-www-form-urlencoded")
-            self.add_header("Content-Length", len(self.get_POSTbody(args)))
-            body = self.get_POSTbody(args)
-        
-        headers = self.get_headers()
-        
-        message = requestline
-        for key in headers:
-            message = message + self.print_header(key, headers[key])
-        message = message + self.end_headers()
-        if args:
-            message = message + body
-            
-        print "\r\n" + message 
-            
-        try:
-            sock.sendall(message.encode("UTF8"))
-        except socket.error:
-            print("Send failed")
-            sys.exit()
-        print("Message sent successfully")  
-        
-        data = self.recvall(sock)
-        print data
-        
-        code = self.get_code(data)
-        body = self.get_body(data)
-            
         return HTTPRequest(code, body)
 
-    # gets called first
-    # tests to see if it is a POST or GET request
-    # calls .POST or .GET respectively
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
-            print "POST"
             return self.POST( url, args )
         else:
-            print "GET"
             return self.GET( url, args )
     
 if __name__ == "__main__":
