@@ -193,7 +193,9 @@ class TestHTTPClient(unittest.TestCase):
         print "Body: [%s]" % req.body
         outargs = json.loads(req.body)
         print outargs.__class__
+        print outargs
         for key in args:
+            # if you remove the [0] it works, why?
             self.assertTrue(args[key] == outargs[key][0], "Key [%s] not found" % key)
         for key in outargs:
             self.assertTrue(args[key] == outargs[key][0], "Key [%s] not found" % key)

@@ -106,9 +106,7 @@ class HTTPClient(object):
     def get_GETbody(self, path):
         return path
 
-    
 
-    
     # read everything from the socket
     def recvall(self, sock):
         buffer = bytearray()
